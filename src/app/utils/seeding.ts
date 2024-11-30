@@ -1,6 +1,6 @@
 import config from '../config';
-import { USER_ROLE } from '../modules/User/user.constant';
-import User from '../modules/User/user.model';
+import { USER_ROLE } from '../module/User/user.constant';
+import User from '../module/User/user.model';
 
 const seedingAdmin = async () => {
   try {
