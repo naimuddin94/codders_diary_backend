@@ -1,18 +1,20 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { Request } from 'express';
 import status from 'http-status';
 import mongoose from 'mongoose';
-import { message, verifyToken } from '../../lib';
+import { verifyToken } from '../../lib';
 import { AppError, fileUploadOnCloudinary } from '../../utils';
+import { ICreateUserPayload } from './user.interface';
 import User from './user.model';
 
 // Update user information in the database
-const updateUserIntoDB = async (req: Request) => {
-  const userData = req.body;
-  const { accessToken } = req.cookies;
-
+const updateUserIntoDB = async (
+  payload: ICreateUserPayload & { image?: string | null },
+  accessToken: string,
+  // eslint-disable-next-line no-undef
+  file: Express.Multer.File | undefined
+) => {
   if (!accessToken) {
-    throw new AppError(status.UNAUTHORIZED, message.unauthorized);
+    throw new AppError(status.UNAUTHORIZED, 'Unauthorized access');
   }
 
   const { id } = await verifyToken(accessToken);
@@ -20,21 +22,21 @@ const updateUserIntoDB = async (req: Request) => {
   const isUserExists = await User.findById(id);
 
   if (!isUserExists) {
-    throw new AppError(status.BAD_REQUEST, message.user_not_exist);
+    throw new AppError(status.BAD_REQUEST, 'User does not exist');
   }
 
-  if (req.file && req.file.buffer) {
-    userData.image = await fileUploadOnCloudinary(req.file.buffer);
+  if (file) {
+    payload['image'] = await fileUploadOnCloudinary(file.buffer);
   }
 
-  const result = await User.findByIdAndUpdate(id, userData).select(
-    '-password -createdAt -updateAt'
+  const result = await User.findByIdAndUpdate(id, payload).select(
+    '-password -createdAt'
   );
 
   if (!result) {
     throw new AppError(
       status.INTERNAL_SERVER_ERROR,
-      message.user_updating_error
+      'Something went wrong while updating user information'
     );
   }
 
@@ -42,12 +44,9 @@ const updateUserIntoDB = async (req: Request) => {
 };
 
 // Block the user the database
-const blockUserIntoDB = async (req: Request) => {
-  const { userId } = req.params;
-  const { accessToken } = req.cookies;
-
+const blockUserIntoDB = async (userId: string, accessToken: string) => {
   if (!accessToken) {
-    throw new AppError(status.UNAUTHORIZED, message.unauthorized);
+    throw new AppError(status.UNAUTHORIZED, 'Unauthorized access');
   }
 
   const { id } = await verifyToken(accessToken);
@@ -55,13 +54,13 @@ const blockUserIntoDB = async (req: Request) => {
   const user = await User.findById(id);
 
   if (!user) {
-    throw new AppError(status.BAD_REQUEST, message.user_not_exist);
+    throw new AppError(status.BAD_REQUEST, 'User does not exist');
   }
 
   const blockUser = await User.findById(userId);
 
   if (!blockUser) {
-    throw new AppError(status.BAD_REQUEST, message.user_not_exist);
+    throw new AppError(status.BAD_REQUEST, 'User does not exist');
   }
 
   const session = await mongoose.startSession();
@@ -105,7 +104,7 @@ const blockUserIntoDB = async (req: Request) => {
     if (!result) {
       throw new AppError(
         status.INTERNAL_SERVER_ERROR,
-        message.user_blocking_error
+        'Something went wrong when blocking user'
       );
     }
 
@@ -115,13 +114,13 @@ const blockUserIntoDB = async (req: Request) => {
     await session.endSession();
 
     return result;
-  } catch (error) {
+  } catch {
     await session.abortTransaction();
     await session.endSession();
-    console.log(error);
+
     throw new AppError(
       status.INTERNAL_SERVER_ERROR,
-      message.user_blocking_error
+      'Something went wrong when blocking user'
     );
   }
 };
