@@ -53,6 +53,7 @@ const saveUserIntoDB = async (
   return { userData, accessToken, refreshToken };
 };
 
+// Login user with password into the database
 const loginUser = async (payload: ILoginPayload) => {
   const user = await User.isUserExists(payload.email);
 
@@ -81,6 +82,7 @@ const loginUser = async (payload: ILoginPayload) => {
   return { accessToken, refreshToken, data };
 };
 
+// Logout user from the database
 const logoutUser = async (accessToken: string) => {
   // checking if the token is missing
   if (accessToken) {
@@ -99,6 +101,7 @@ const logoutUser = async (accessToken: string) => {
   return null;
 };
 
+// Change password from the database
 const changePasswordIntoDB = async (
   payload: IChangePasswordPayload,
   accessToken: string
