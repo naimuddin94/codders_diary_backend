@@ -1,4 +1,3 @@
-import message from './message';
 import verifyToken from './verifyToken';
 
-export { message,  verifyToken };
+export { verifyToken };
