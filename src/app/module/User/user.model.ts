@@ -2,7 +2,6 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Schema, model } from 'mongoose';
 import config from '../../config';
-import { role } from './user.constant';
 import { IUser, IUserMethods, IUserModel } from './user.interface';
 
 const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
@@ -64,7 +63,7 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
     },
     role: {
       type: String,
-      enum: role,
+      enum: ['admin', 'user'],
       default: 'user',
     },
     refreshToken: {

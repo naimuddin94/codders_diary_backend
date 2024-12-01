@@ -1,5 +1,6 @@
 import express from 'express';
 import { validateRequest, validateRequestCookies } from '../../middlewares';
+import { auth } from '../../utils';
 import { UserController } from './user.controller';
 import { UserValidation } from './user.validation';
 
@@ -7,7 +8,7 @@ const router = express.Router();
 
 router
   .route('/')
-  .get(UserController.getAllUsers)
+  .get(auth('admin'), UserController.getAllUsers)
   .patch(
     validateRequest(UserValidation.updateUserValidationSchema),
     UserController.updateUser

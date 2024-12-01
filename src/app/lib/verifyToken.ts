@@ -8,6 +8,7 @@ interface ITokenUser {
   email: string;
   role: string;
   image: string;
+  iat: number;
 }
 
 const verifyToken = async (token: string) => {

@@ -1,6 +1,7 @@
 import AppError from './AppError';
 import AppResponse from './AppResponse';
 import asyncHandler from './asyncHandler';
+import auth from './auth';
 import fileUploadOnCloudinary from './fileUploadOnCloudinary';
 import globalErrorHandler from './globalErrorHandler';
 import notFound from './notFound';
@@ -17,6 +18,7 @@ export {
   AppError,
   AppResponse,
   asyncHandler,
+  auth,
   fileUploadOnCloudinary,
   globalErrorHandler,
   notFound,
