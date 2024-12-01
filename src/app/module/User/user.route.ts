@@ -7,6 +7,7 @@ const router = express.Router();
 
 router
   .route('/')
+  .get(UserController.getAllUsers)
   .patch(
     validateRequest(UserValidation.updateUserValidationSchema),
     UserController.updateUser
@@ -17,6 +18,13 @@ router
   .patch(
     validateRequestCookies(UserValidation.accessTokenValidationSchema),
     UserController.blockUser
+  );
+
+router
+  .route('/follow/:userId')
+  .patch(
+    validateRequestCookies(UserValidation.accessTokenValidationSchema),
+    UserController.followUser
   );
 
 export const UserRoutes = router;

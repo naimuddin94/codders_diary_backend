@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import status from 'http-status';
 import mongoose from 'mongoose';
+import QueryBuilder from '../../builders/QueryBuilder';
 import { verifyToken } from '../../lib';
 import { AppError, fileUploadOnCloudinary } from '../../utils';
+import { userSearchableFields } from './user.constant';
 import { ICreateUserPayload } from './user.interface';
 import User from './user.model';
 
 // Update user information in the database
 const updateUserIntoDB = async (
-  payload: ICreateUserPayload & { image?: string | null },
+  payload: ICreateUserPayload,
   accessToken: string,
   // eslint-disable-next-line no-undef
   file: Express.Multer.File | undefined
@@ -125,7 +127,104 @@ const blockUserIntoDB = async (userId: string, accessToken: string) => {
   }
 };
 
+// Flow the user the database
+const followUserIntoDB = async (userId: string, accessToken: string) => {
+  if (!accessToken) {
+    throw new AppError(status.UNAUTHORIZED, 'Unauthorized access');
+  }
+
+  const { id } = await verifyToken(accessToken);
+
+  const user = await User.findById(id);
+
+  if (!user) {
+    throw new AppError(status.BAD_REQUEST, 'User does not exist');
+  }
+
+  const followUser = await User.findById(userId);
+
+  if (!followUser) {
+    throw new AppError(status.BAD_REQUEST, 'User does not exist');
+  }
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const isAllReadyFollowing = user.following.find(
+      (user) => user.toString() === userId
+    );
+
+    let updatedData = {
+      $addToSet: { following: userId },
+    };
+
+    let followersUpdatedData = {
+      $addToSet: { followers: user._id },
+    };
+
+    if (isAllReadyFollowing) {
+      updatedData = {
+        //@ts-ignore
+        $pull: { following: userId },
+      };
+      followersUpdatedData = {
+        //@ts-ignore
+        $pull: { followers: user._id },
+      };
+    }
+
+    const result = await User.findByIdAndUpdate(id, updatedData, {
+      session,
+      new: true,
+      fields: { following: 1 },
+    });
+
+    if (!result) {
+      throw new AppError(
+        status.INTERNAL_SERVER_ERROR,
+        'Something went wrong when blocking user'
+      );
+    }
+
+    await User.findByIdAndUpdate(userId, followersUpdatedData, { session });
+
+    await session.commitTransaction();
+    await session.endSession();
+
+    return result;
+  } catch {
+    await session.abortTransaction();
+    await session.endSession();
+
+    throw new AppError(
+      status.INTERNAL_SERVER_ERROR,
+      'Something went wrong when blocking user'
+    );
+  }
+};
+
+// Fetch all the users
+const fetchAllUsersFromDB = async (query: Record<string, unknown>) => {
+  const userQuery = new QueryBuilder(User.find(), query)
+    .search(userSearchableFields)
+    .filter()
+    .sort()
+    .paginate();
+
+  const data = await userQuery.modelQuery;
+  const meta = await userQuery.countTotal();
+
+  return {
+    data,
+    meta,
+  };
+};
+
 export const UserService = {
   updateUserIntoDB,
   blockUserIntoDB,
+  followUserIntoDB,
+  fetchAllUsersFromDB,
 };

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable no-unused-vars */
 import { HydratedDocument, Model, ObjectId } from 'mongoose';
 import { z } from 'zod';
@@ -44,6 +43,8 @@ export interface IChangePasswordPayload {
 }
 
 export interface ICreateUserPayload
-  extends z.infer<typeof UserValidation.userValidationSchema> {}
+  extends z.infer<typeof UserValidation.userValidationSchema> {
+  image?: string | null;
+}
 
 export type TUserRole = keyof typeof USER_ROLE;
